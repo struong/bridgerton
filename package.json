@@ -1,12 +1,18 @@
 {
-  "name": "bridged",
+  "name": "bridgerton",
   "version": "0.1.0",
   "type": "module",
   "description": "Bridge.xyz stablecoin infrastructure CLI.",
   "license": "MIT",
-  "bin": { "bridged": "./dist/bin.js" },
-  "exports": { ".": "./dist/index.js" },
-  "files": ["dist"],
+  "bin": {
+    "bridgerton": "./dist/bin.js"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc && chmod +x dist/bin.js && bun link",
     "typecheck": "tsc --noEmit"
