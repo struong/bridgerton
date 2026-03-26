@@ -1,11 +1,12 @@
 import { Cli, z } from 'incur'
-import { createCustomer, getCustomer, listCustomers } from './core/customers.js'
-import { createWallet, getWallet, listWallets } from './core/wallets.js'
+import { createCustomer, getCustomer, listCustomers, updateCustomer, deleteCustomer, createTosLink, getKycLink, getTosAcceptanceLink, listCustomerTransfers } from './core/customers.js'
+import { createWallet, getWallet, listWallets, listAllWallets, getWalletTotalBalances, getWalletHistory } from './core/wallets.js'
 import { createTransfer, getTransfer, listTransfers } from './core/transfers.js'
-import { createLiquidation, getLiquidation, listLiquidations, listDrains } from './core/liquidation.js'
+import { createLiquidation, getLiquidation, listLiquidations, listDrains, updateLiquidation, listAllDrains } from './core/liquidation.js'
 import { createExternalAccount, getExternalAccount, listExternalAccounts, deleteExternalAccount } from './core/external-accounts.js'
-import { createVirtualAccount, getVirtualAccount, listVirtualAccounts } from './core/virtual-accounts.js'
+import { createVirtualAccount, getVirtualAccount, listVirtualAccounts, listAllVirtualAccounts, updateVirtualAccount, deactivateVirtualAccount, reactivateVirtualAccount, getVirtualAccountActivity, getAllVirtualAccountActivity } from './core/virtual-accounts.js'
 import { getExchangeRates } from './core/exchange-rates.js'
+import { listPrefundedAccounts, getPrefundedAccount, getPrefundedAccountHistory } from './core/prefunded-accounts.js'
 
 const cli = Cli.create('bridgerton', {
   version: '0.1.0',
@@ -49,6 +50,61 @@ customers.command('list', {
   async run() { return listCustomers() },
 })
 
+customers.command('update', {
+  description: 'Update a customer',
+  args: z.object({ id: z.string().describe('Customer ID') }),
+  options: z.object({
+    firstName: z.string().optional().describe('First name'),
+    lastName: z.string().optional().describe('Last name'),
+    email: z.string().optional().describe('Email address'),
+  }),
+  async run(c) {
+    const body: any = {}
+    if (c.options.firstName) body.first_name = c.options.firstName
+    if (c.options.lastName) body.last_name = c.options.lastName
+    if (c.options.email) body.email = c.options.email
+    return updateCustomer(c.args.id, body)
+  },
+})
+
+customers.command('delete', {
+  description: 'Delete a customer',
+  args: z.object({ id: z.string().describe('Customer ID') }),
+  async run(c) { return deleteCustomer(c.args.id) },
+})
+
+customers.command('tos-link', {
+  description: 'Create a hosted ToS acceptance link for new customer creation',
+  async run() { return createTosLink() },
+})
+
+customers.command('kyc-link', {
+  description: 'Get a hosted KYC link for an existing customer',
+  args: z.object({ id: z.string().describe('Customer ID') }),
+  options: z.object({
+    endorsement: z.string().optional().describe('Endorsement type (sepa, spei, cards)'),
+    redirectUri: z.string().optional().describe('Redirect URI after KYC completion'),
+  }),
+  async run(c) {
+    const params: Record<string, string> = {}
+    if (c.options.endorsement) params.endorsement = c.options.endorsement
+    if (c.options.redirectUri) params.redirect_uri = c.options.redirectUri
+    return getKycLink(c.args.id, Object.keys(params).length ? params : undefined)
+  },
+})
+
+customers.command('tos-acceptance-link', {
+  description: 'Get a hosted ToS acceptance link for an existing customer',
+  args: z.object({ id: z.string().describe('Customer ID') }),
+  async run(c) { return getTosAcceptanceLink(c.args.id) },
+})
+
+customers.command('transfers', {
+  description: 'List transfers for a customer',
+  args: z.object({ id: z.string().describe('Customer ID') }),
+  async run(c) { return listCustomerTransfers(c.args.id) },
+})
+
 cli.command(customers)
 
 // --- wallets subcommand group ---
@@ -77,6 +133,22 @@ wallets.command('list', {
   description: 'List wallets for a customer',
   args: z.object({ customerId: z.string().describe('Customer ID') }),
   async run(c) { return listWallets(c.args.customerId) },
+})
+
+wallets.command('list-all', {
+  description: 'List all wallets across all customers',
+  async run() { return listAllWallets() },
+})
+
+wallets.command('total-balances', {
+  description: 'Get total balances across all wallets',
+  async run() { return getWalletTotalBalances() },
+})
+
+wallets.command('history', {
+  description: 'Get transaction history for a wallet',
+  args: z.object({ walletId: z.string().describe('Wallet ID') }),
+  async run(c) { return getWalletHistory(c.args.walletId) },
 })
 
 cli.command(wallets)
@@ -177,6 +249,31 @@ liquidation.command('drains', {
     liquidationAddressId: z.string().describe('Liquidation address ID'),
   }),
   async run(c) { return listDrains(c.args.customerId, c.args.liquidationAddressId) },
+})
+
+liquidation.command('update', {
+  description: 'Update a liquidation address',
+  args: z.object({
+    customerId: z.string().describe('Customer ID'),
+    liquidationAddressId: z.string().describe('Liquidation address ID'),
+  }),
+  options: z.object({
+    externalAccountId: z.string().optional().describe('External account ID'),
+    feePercent: z.string().optional().describe('Developer fee percent (e.g. "1.0")'),
+    returnAddress: z.string().optional().describe('Crypto return address'),
+  }),
+  async run(c) {
+    const body: any = {}
+    if (c.options.externalAccountId) body.external_account_id = c.options.externalAccountId
+    if (c.options.feePercent) body.custom_developer_fee_percent = c.options.feePercent
+    if (c.options.returnAddress) body.return_address = c.options.returnAddress
+    return updateLiquidation(c.args.customerId, c.args.liquidationAddressId, body)
+  },
+})
+
+liquidation.command('all-drains', {
+  description: 'List drain activity across all customers',
+  async run() { return listAllDrains() },
 })
 
 cli.command(liquidation)
@@ -294,7 +391,90 @@ virtualAccounts.command('list', {
   async run(c) { return listVirtualAccounts(c.args.customerId) },
 })
 
+virtualAccounts.command('list-all', {
+  description: 'List all virtual accounts across all customers',
+  async run() { return listAllVirtualAccounts() },
+})
+
+virtualAccounts.command('update', {
+  description: 'Update a virtual account',
+  args: z.object({
+    customerId: z.string().describe('Customer ID'),
+    id: z.string().describe('Virtual account ID'),
+  }),
+  options: z.object({
+    destRail: z.string().optional().describe('Destination blockchain'),
+    destCurrency: z.string().optional().describe('Destination stablecoin'),
+    destAddress: z.string().optional().describe('Destination blockchain address'),
+    feePercent: z.string().optional().describe('Developer fee percent'),
+  }),
+  async run(c) {
+    const body: any = {}
+    const dest: any = {}
+    if (c.options.destRail) dest.payment_rail = c.options.destRail
+    if (c.options.destCurrency) dest.currency = c.options.destCurrency
+    if (c.options.destAddress) dest.address = c.options.destAddress
+    if (Object.keys(dest).length) body.destination = dest
+    if (c.options.feePercent) body.developer_fee_percent = c.options.feePercent
+    return updateVirtualAccount(c.args.customerId, c.args.id, body)
+  },
+})
+
+virtualAccounts.command('deactivate', {
+  description: 'Deactivate a virtual account',
+  args: z.object({
+    customerId: z.string().describe('Customer ID'),
+    id: z.string().describe('Virtual account ID'),
+  }),
+  async run(c) { return deactivateVirtualAccount(c.args.customerId, c.args.id) },
+})
+
+virtualAccounts.command('reactivate', {
+  description: 'Reactivate a virtual account',
+  args: z.object({
+    customerId: z.string().describe('Customer ID'),
+    id: z.string().describe('Virtual account ID'),
+  }),
+  async run(c) { return reactivateVirtualAccount(c.args.customerId, c.args.id) },
+})
+
+virtualAccounts.command('activity', {
+  description: 'Get activity history for a virtual account',
+  args: z.object({
+    customerId: z.string().describe('Customer ID'),
+    id: z.string().describe('Virtual account ID'),
+  }),
+  async run(c) { return getVirtualAccountActivity(c.args.customerId, c.args.id) },
+})
+
+virtualAccounts.command('all-activity', {
+  description: 'Get activity history across all virtual accounts',
+  async run() { return getAllVirtualAccountActivity() },
+})
+
 cli.command(virtualAccounts)
+
+// --- prefunded-accounts subcommand group ---
+const prefundedAccounts = Cli.create('prefunded-accounts', { description: 'Manage prefunded accounts.' })
+
+prefundedAccounts.command('list', {
+  description: 'List all prefunded accounts',
+  async run() { return listPrefundedAccounts() },
+})
+
+prefundedAccounts.command('get', {
+  description: 'Get a prefunded account',
+  args: z.object({ id: z.string().describe('Prefunded account ID') }),
+  async run(c) { return getPrefundedAccount(c.args.id) },
+})
+
+prefundedAccounts.command('history', {
+  description: 'Get funding history for a prefunded account',
+  args: z.object({ id: z.string().describe('Prefunded account ID') }),
+  async run(c) { return getPrefundedAccountHistory(c.args.id) },
+})
+
+cli.command(prefundedAccounts)
 
 // --- exchange rates ---
 cli.command('rates', {
