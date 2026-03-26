@@ -7,9 +7,10 @@ import { createExternalAccount, getExternalAccount, listExternalAccounts, delete
 import { createVirtualAccount, getVirtualAccount, listVirtualAccounts, listAllVirtualAccounts, updateVirtualAccount, deactivateVirtualAccount, reactivateVirtualAccount, getVirtualAccountActivity, getAllVirtualAccountActivity } from './core/virtual-accounts.js'
 import { getExchangeRates } from './core/exchange-rates.js'
 import { listPrefundedAccounts, getPrefundedAccount, getPrefundedAccountHistory } from './core/prefunded-accounts.js'
+import pkg from '../package.json' with { type: 'json' }
 
 const cli = Cli.create('bridgerton', {
-  version: '0.2.0',
+  version: pkg.version,
   description: 'Bridge.xyz stablecoin infrastructure CLI.',
   sync: {
     suggestions: [
