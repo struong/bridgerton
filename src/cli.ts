@@ -3,6 +3,7 @@ import { createCustomer, getCustomer, listCustomers } from './core/customers.js'
 import { createWallet, getWallet, listWallets } from './core/wallets.js'
 import { createTransfer, getTransfer, listTransfers } from './core/transfers.js'
 import { createLiquidation, getLiquidation, listLiquidations, listDrains } from './core/liquidation.js'
+import { createExternalAccount, getExternalAccount, listExternalAccounts, deleteExternalAccount } from './core/external-accounts.js'
 import { createVirtualAccount, getVirtualAccount, listVirtualAccounts } from './core/virtual-accounts.js'
 import { getExchangeRates } from './core/exchange-rates.js'
 
@@ -141,9 +142,10 @@ liquidation.command('create', {
     destRail: z.string().optional().describe('Destination payment rail'),
     destCurrency: z.string().optional().describe('Destination currency'),
     feePercent: z.string().optional().describe('Developer fee percent (e.g. "1.0")'),
+    returnAddress: z.string().optional().describe('Crypto address for returns if deposit cannot be delivered'),
   }),
   async run(c) {
-    const { chain, currency, destinationAddress, externalAccountId, walletId, destRail, destCurrency, feePercent } = c.options
+    const { chain, currency, destinationAddress, externalAccountId, walletId, destRail, destCurrency, feePercent, returnAddress } = c.options
     const body: any = { chain, currency }
     if (destinationAddress) body.destination_address = destinationAddress
     if (externalAccountId) body.external_account_id = externalAccountId
@@ -151,6 +153,7 @@ liquidation.command('create', {
     if (destRail) body.destination_payment_rail = destRail
     if (destCurrency) body.destination_currency = destCurrency
     if (feePercent) body.custom_developer_fee_percent = feePercent
+    if (returnAddress) body.return_address = returnAddress
     return createLiquidation(c.args.customerId, body)
   },
 })
@@ -177,6 +180,80 @@ liquidation.command('drains', {
 })
 
 cli.command(liquidation)
+
+// --- external-accounts subcommand group ---
+const externalAccounts = Cli.create('external-accounts', { description: 'Manage external bank accounts.' })
+
+externalAccounts.command('create', {
+  description: 'Create an external account (US ACH)',
+  args: z.object({ customerId: z.string().describe('Customer ID') }),
+  options: z.object({
+    accountNumber: z.string().describe('Bank account number'),
+    routingNumber: z.string().describe('Bank routing number (9 digits)'),
+    accountOwnerName: z.string().describe('Account owner name'),
+    checkingOrSavings: z.enum(['checking', 'savings']).default('checking').describe('Checking or savings'),
+    bankName: z.string().optional().describe('Bank name'),
+    firstName: z.string().optional().describe('Account holder first name'),
+    lastName: z.string().optional().describe('Account holder last name'),
+    businessName: z.string().optional().describe('Business name (for business accounts)'),
+    street: z.string().optional().describe('Street address'),
+    city: z.string().optional().describe('City'),
+    state: z.string().optional().describe('State (2-letter code)'),
+    postalCode: z.string().optional().describe('Postal/ZIP code'),
+    country: z.string().default('USA').describe('Country code (3-letter ISO, e.g. USA)'),
+  }),
+  async run(c) {
+    const { accountNumber, routingNumber, accountOwnerName, checkingOrSavings, bankName, firstName, lastName, businessName, street, city, state, postalCode, country } = c.options
+    const body: any = {
+      currency: 'usd',
+      account_type: 'us',
+      account_owner_name: accountOwnerName,
+      account: {
+        account_number: accountNumber,
+        routing_number: routingNumber,
+        checking_or_savings: checkingOrSavings,
+      },
+    }
+    if (bankName) body.bank_name = bankName
+    if (firstName) body.first_name = firstName
+    if (lastName) body.last_name = lastName
+    if (businessName) body.business_name = businessName
+    if (street || city || state || postalCode) {
+      body.address = { country }
+      if (street) body.address.street_line_1 = street
+      if (city) body.address.city = city
+      if (state) body.address.state = state
+      if (postalCode) body.address.postal_code = postalCode
+    }
+    return createExternalAccount(c.args.customerId, body)
+  },
+})
+
+externalAccounts.command('get', {
+  description: 'Get an external account',
+  args: z.object({
+    customerId: z.string().describe('Customer ID'),
+    externalAccountId: z.string().describe('External account ID'),
+  }),
+  async run(c) { return getExternalAccount(c.args.customerId, c.args.externalAccountId) },
+})
+
+externalAccounts.command('list', {
+  description: 'List external accounts for a customer',
+  args: z.object({ customerId: z.string().describe('Customer ID') }),
+  async run(c) { return listExternalAccounts(c.args.customerId) },
+})
+
+externalAccounts.command('delete', {
+  description: 'Delete (deactivate) an external account',
+  args: z.object({
+    customerId: z.string().describe('Customer ID'),
+    externalAccountId: z.string().describe('External account ID'),
+  }),
+  async run(c) { return deleteExternalAccount(c.args.customerId, c.args.externalAccountId) },
+})
+
+cli.command(externalAccounts)
 
 // --- virtual-accounts subcommand group ---
 const virtualAccounts = Cli.create('virtual-accounts', { description: 'Manage virtual accounts (fiat deposit addresses).' })

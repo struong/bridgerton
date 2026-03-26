@@ -36,4 +36,6 @@ export const bridge = {
   post: (path: string, body: Record<string, unknown>) => request('POST', path, body),
   /** PUT to a Bridge API endpoint. */
   put: (path: string, body: Record<string, unknown>) => request('PUT', path, body),
+  /** DELETE a Bridge API endpoint. */
+  delete: (path: string) => request('DELETE', path),
 }
