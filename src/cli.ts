@@ -479,8 +479,8 @@ prefundedAccounts.command('history', {
 cli.command(prefundedAccounts)
 
 // --- configure ---
-cli.command('configure', {
-  description: 'Save your Bridge API key to ~/.config/bridgerton/config.json',
+cli.command('set-key', {
+  description: 'Save your Bridge API key',
   args: z.object({ apiKey: z.string().describe('Bridge API key (sk-live-... or sk-test-...)') }),
   async run(c) {
     writeConfig({ api_key: c.args.apiKey })
