@@ -5,6 +5,10 @@
   "description": "Bridge.xyz stablecoin infrastructure CLI.",
   "license": "MIT",
   "keywords": ["bridge", "bridge-xyz", "stablecoin", "cli", "mcp", "payments", "on-ramp", "off-ramp", "usdc", "wallets"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/struong/bridgerton.git"
+  },
   "bin": {
     "bridgerton": "./dist/bin.js"
   },
