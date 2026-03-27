@@ -7,12 +7,13 @@ import { createExternalAccount, getExternalAccount, listExternalAccounts, delete
 import { createVirtualAccount, getVirtualAccount, listVirtualAccounts, listAllVirtualAccounts, updateVirtualAccount, deactivateVirtualAccount, reactivateVirtualAccount, getVirtualAccountActivity, getAllVirtualAccountActivity } from './core/virtual-accounts.js'
 import { getExchangeRates } from './core/exchange-rates.js'
 import { listPrefundedAccounts, getPrefundedAccount, getPrefundedAccountHistory } from './core/prefunded-accounts.js'
-import { writeConfig, getApiKey } from './core/client.js'
+import { writeConfig, getApiKey, getDefaultFormat } from './core/client.js'
 import pkg from '../package.json' with { type: 'json' }
 
 const cli = Cli.create('bridgerton', {
   version: pkg.version,
   description: 'Bridge.xyz stablecoin infrastructure CLI.',
+  format: (getDefaultFormat() as any) ?? undefined,
   sync: {
     suggestions: [
       'create a wallet on tempo for a customer',
@@ -486,6 +487,15 @@ cli.command('set-key', {
     writeConfig({ api_key: c.args.apiKey })
     const env = c.args.apiKey.startsWith('sk-test') ? 'sandbox' : 'production'
     return { saved: true, environment: env, config: '~/.config/bridgerton/config.json' }
+  },
+})
+
+cli.command('set-format', {
+  description: 'Set the default output format',
+  args: z.object({ format: z.enum(['toon', 'json', 'yaml', 'md', 'jsonl']).describe('Output format') }),
+  async run(c) {
+    writeConfig({ format: c.args.format })
+    return { saved: true, format: c.args.format }
   },
 })
 

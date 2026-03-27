@@ -21,6 +21,11 @@ export function getApiKey(): string {
   return process.env.BRIDGE_API_KEY ?? readConfig().api_key ?? ''
 }
 
+/** Get the saved default output format. */
+export function getDefaultFormat(): string | undefined {
+  return readConfig().format
+}
+
 /** Base URL for the Bridge API, auto-detected from API key prefix. */
 const base = () =>
   getApiKey().startsWith('sk-test')
