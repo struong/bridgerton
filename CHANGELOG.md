@@ -1,5 +1,11 @@
 # bridgerton
 
+## 0.3.1
+
+### Patch Changes
+
+- [`3d215ac`](https://github.com/struong/bridgerton/commit/3d215ac8909a28c660ab5f84ca4cd640d3eef26b) Thanks [@struong](https://github.com/struong)! - Credit incur in --help output and README.
+
 ## 0.3.0
 
 ### Minor Changes
