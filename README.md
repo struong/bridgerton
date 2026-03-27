@@ -104,7 +104,7 @@ bun run typecheck    # tsc --noEmit
 
 ## Built with
 
-[incur](https://github.com/tempoxyz/incur) — one CLI router that gives you a CLI, MCP server, and agent skills for free.
+[incur](https://github.com/wevm/incur) — one CLI router that gives you a CLI, MCP server, and agent skills for free.
 
 ## License
 
