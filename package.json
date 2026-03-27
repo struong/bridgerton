@@ -4,6 +4,7 @@
   "type": "module",
   "description": "Bridge.xyz stablecoin infrastructure CLI.",
   "license": "MIT",
+  "keywords": ["bridge", "bridge-xyz", "stablecoin", "cli", "mcp", "payments", "on-ramp", "off-ramp", "usdc", "wallets"],
   "bin": {
     "bridgerton": "./dist/bin.js"
   },
