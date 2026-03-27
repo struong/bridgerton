@@ -77,15 +77,18 @@ bridgerton configure format json
 
 All commands support `--format toon|json|yaml|md|jsonl` and `--help`.
 
-## MCP Server
+## Agent Setup
 
-Register as an MCP server for AI agents:
+Give your AI agent (Claude Code, Amp, Cursor, Copilot, etc.) full access to Bridge.xyz:
 
 ```bash
-bridgerton mcp add
+npx bridgerton mcp add      # register as MCP server — gives agents direct tool access
+npx bridgerton skills add   # install skill files — gives agents context on available commands
 ```
 
-Or run directly in stdio mode:
+That's it. Your agent can now run commands like "create a wallet on tempo for a customer" or "list all transfers".
+
+You can also run the MCP server directly in stdio mode:
 
 ```bash
 bridgerton --mcp
