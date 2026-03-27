@@ -12,7 +12,7 @@ import pkg from '../package.json' with { type: 'json' }
 
 const cli = Cli.create('bridgerton', {
   version: pkg.version,
-  description: 'Bridge.xyz stablecoin infrastructure CLI.',
+  description: 'Bridge.xyz stablecoin infrastructure CLI. Built with incur.',
   format: getDefaultFormat() as 'toon' | 'json' | 'yaml' | 'md' | 'jsonl' | undefined,
   sync: {
     suggestions: [
