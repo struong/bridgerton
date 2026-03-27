@@ -479,8 +479,10 @@ prefundedAccounts.command('history', {
 
 cli.command(prefundedAccounts)
 
-// --- configure ---
-cli.command('set-key', {
+// --- configure subcommand group ---
+const configure = Cli.create('configure', { description: 'Manage CLI configuration.' })
+
+configure.command('api-key', {
   description: 'Save your Bridge API key',
   args: z.object({ apiKey: z.string().describe('Bridge API key (sk-live-... or sk-test-...)') }),
   async run(c) {
@@ -490,7 +492,7 @@ cli.command('set-key', {
   },
 })
 
-cli.command('set-format', {
+configure.command('format', {
   description: 'Set the default output format',
   args: z.object({ format: z.enum(['toon', 'json', 'yaml', 'md', 'jsonl']).describe('Output format') }),
   async run(c) {
@@ -499,16 +501,18 @@ cli.command('set-format', {
   },
 })
 
-cli.command('whoami', {
-  description: 'Show which API key and environment are active',
+configure.command('show', {
+  description: 'Show current configuration',
   async run() {
     const key = getApiKey()
-    if (!key) return { error: 'No API key configured. Run: bridgerton configure <api-key>' }
+    if (!key) return { error: 'No API key configured. Run: bridgerton configure api-key <key>' }
     const source = process.env.BRIDGE_API_KEY ? 'BRIDGE_API_KEY env var' : '~/.config/bridgerton/config.json'
     const env = key.startsWith('sk-test') ? 'sandbox' : 'production'
-    return { key: key.slice(0, 12) + '...' + key.slice(-4), environment: env, source }
+    return { api_key: key.slice(0, 12) + '...' + key.slice(-4), environment: env, source, format: getDefaultFormat() ?? 'toon' }
   },
 })
+
+cli.command(configure)
 
 // --- exchange rates ---
 cli.command('rates', {

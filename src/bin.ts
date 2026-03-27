@@ -20,7 +20,7 @@ if (!hasArgs && !getApiKey()) {
     rl.close()
 
     if (!key) {
-      console.error('\n  No key provided. You can set one later:\n\n    bridgerton set-key <your-api-key>\n')
+      console.error('\n  No key provided. You can set one later:\n\n    bridgerton configure api-key <your-api-key>\n')
       process.exit(1)
     }
 
@@ -29,7 +29,7 @@ if (!hasArgs && !getApiKey()) {
     console.error(`\n  ✓ Saved to ~/.config/bridgerton/config.json (${env})`)
     console.error('\n  You\'re all set! Run bridgerton --help to see available commands.\n')
   } else {
-    console.error('  Run:  bridgerton set-key <your-api-key>')
+    console.error('  Run:  bridgerton configure api-key <your-api-key>')
     console.error('  Or:   export BRIDGE_API_KEY=sk-live-...\n')
     process.exit(1)
   }

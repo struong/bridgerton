@@ -56,7 +56,7 @@ async function ensureApiKey(): Promise<string> {
   const key = getApiKey()
   if (key) return key
   if (process.stdin.isTTY) return promptForKey()
-  console.error('Error: No Bridge API key found.\n\n  Run:  bridgerton set-key <your-api-key>\n  Or:   export BRIDGE_API_KEY=sk-live-...\n')
+  console.error('Error: No Bridge API key found.\n\n  Run:  bridgerton configure api-key <your-api-key>\n  Or:   export BRIDGE_API_KEY=sk-live-...\n')
   process.exit(1)
 }
 
