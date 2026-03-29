@@ -30,8 +30,7 @@ var h=Plaid.create({
       .catch(function(){s.textContent='Exchange failed. Check terminal.'});
   },
   onExit:function(e){
-    s.textContent=e?(e.display_message||e.error_message||'Error'):'Cancelled.';
-    fetch('http://localhost:${port}/exit',{method:'POST'});
+    s.textContent=e?(e.display_message||e.error_message||'Error'):'Cancelled. Reload to retry.';
   }
 });
 h.open();
@@ -72,15 +71,6 @@ export async function runPlaidLinkFlow(customerId: string): Promise<Record<strin
         const port = (server.address() as import('node:net').AddressInfo).port
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end(buildHtml(linkToken, port))
-        return
-      }
-
-      if (req.method === 'POST' && req.url === '/exit') {
-        res.writeHead(200)
-        res.end()
-        console.error(`  ✗ Plaid Link exited without connecting. Shutting down.\n`)
-        server.close()
-        resolve({ cancelled: true })
         return
       }
 
