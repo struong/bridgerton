@@ -286,12 +286,12 @@ cli.command(liquidation)
 const externalAccounts = Cli.create('external-accounts', { description: 'Manage external bank accounts.' })
 
 externalAccounts.command('create', {
-  description: 'Create an external account (US ACH)',
+  description: 'Add an external account (US ACH) manually or with Plaid.',
   args: z.object({ customerId: z.string().describe('Customer ID') }),
   options: z.object({
-    accountNumber: z.string().describe('Bank account number'),
-    routingNumber: z.string().describe('Bank routing number (9 digits)'),
-    accountOwnerName: z.string().describe('Account owner name'),
+    accountNumber: z.string().optional().describe('Bank account number (omit to use Plaid Link)'),
+    routingNumber: z.string().optional().describe('Bank routing number, 9 digits (omit to use Plaid Link)'),
+    accountOwnerName: z.string().optional().describe('Account owner name (omit to use Plaid Link)'),
     checkingOrSavings: z.enum(['checking', 'savings']).default('checking').describe('Checking or savings'),
     bankName: z.string().optional().describe('Bank name'),
     firstName: z.string().optional().describe('Account holder first name'),
@@ -305,6 +305,10 @@ externalAccounts.command('create', {
   }),
   async run(c) {
     const { accountNumber, routingNumber, accountOwnerName, checkingOrSavings, bankName, firstName, lastName, businessName, street, city, state, postalCode, country } = c.options
+    if (!accountNumber && !routingNumber && !accountOwnerName) return runPlaidLinkFlow(c.args.customerId)
+    if (!accountNumber || !routingNumber || !accountOwnerName) {
+      throw new Error('--accountNumber, --routingNumber, and --accountOwnerName are all required for manual creation')
+    }
     const body: any = {
       currency: 'usd',
       account_type: 'us',
@@ -355,13 +359,6 @@ externalAccounts.command('delete', {
 })
 
 cli.command(externalAccounts)
-
-// --- plaid-link command ---
-cli.command('plaid-link', {
-  description: 'Link a bank account via Plaid Link (opens browser). Adds an external account without passing raw bank details.',
-  args: z.object({ customerId: z.string().describe('Customer ID') }),
-  async run(c) { return runPlaidLinkFlow(c.args.customerId) },
-})
 
 // --- virtual-accounts subcommand group ---
 const virtualAccounts = Cli.create('virtual-accounts', { description: 'Manage virtual accounts (fiat deposit addresses).' })
