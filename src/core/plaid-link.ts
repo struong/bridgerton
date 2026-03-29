@@ -31,6 +31,7 @@ var h=Plaid.create({
   },
   onExit:function(e){
     s.textContent=e?(e.display_message||e.error_message||'Error'):'Cancelled. Reload to retry.';
+    fetch('http://localhost:${port}/exit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error:e})});
   }
 });
 h.open();
@@ -74,19 +75,36 @@ export async function runPlaidLinkFlow(customerId: string): Promise<Record<strin
         return
       }
 
+      if (req.method === 'POST' && req.url === '/exit') {
+        let body = ''
+        req.on('data', (chunk: Buffer) => { body += chunk.toString() })
+        req.on('end', () => {
+          const { error } = JSON.parse(body || '{}') as { error?: { display_message?: string; error_message?: string } }
+          const msg = error?.display_message || error?.error_message || 'User cancelled'
+          console.error(`\n  ✗ Plaid Link exited: ${msg}. Waiting for retry...`)
+          res.writeHead(200)
+          res.end()
+        })
+        return
+      }
+
       if (req.method === 'POST' && req.url === '/exchange') {
         let body = ''
         req.on('data', (chunk: Buffer) => { body += chunk.toString() })
         req.on('end', async () => {
           try {
             const { public_token } = JSON.parse(body) as { public_token: string }
-            console.error(`\n  ✓ Received public_token, exchanging with Bridge…`)
-            const result = await exchangePublicToken(linkToken, public_token)
+            console.error(`\n  ✓ Received public_token, exchanging with Bridge...`)
+            const result = await exchangePublicToken(linkToken, public_token) as Record<string, unknown>
             res.writeHead(200, { 'Content-Type': 'application/json' })
             res.end(JSON.stringify(result))
-            console.error(`  ✓ Exchange complete. Shutting down.\n`)
+            if (result.message) {
+              console.error(`  ✓ ${result.message}. Shutting down.\n`)
+            } else {
+              console.error(`  ✗ Exchange failed. Shutting down.\n`)
+            }
             server.close()
-            resolve(result as Record<string, unknown>)
+            resolve(result)
           } catch (e) {
             res.writeHead(500, { 'Content-Type': 'application/json' })
             res.end(JSON.stringify({ error: String(e) }))
@@ -104,7 +122,7 @@ export async function runPlaidLinkFlow(customerId: string): Promise<Record<strin
       const { port } = server.address() as import('node:net').AddressInfo
       const localUrl = `http://localhost:${port}`
       console.error(`  ✓ Local server running at ${localUrl}`)
-      console.error(`  ✓ Opening browser…\n`)
+      console.error(`  ✓ Opening browser...\n`)
 
       // Open browser (cross-platform)
       const { exec } = await import('node:child_process')
