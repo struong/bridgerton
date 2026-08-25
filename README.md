@@ -51,6 +51,15 @@ bridgerton customers create -f John -l Doe -e john@example.com
 # create a wallet on tempo
 bridgerton wallets create <customer-id> --chain tempo
 
+# add a SEPA IBAN external account
+bridgerton external-accounts create <customer-id> \
+  --account-type iban --iban <iban> --bic <bic> \
+  --account-owner-name "Ada Lovelace" --account-owner-type individual \
+  --first-name Ada --last-name Lovelace \
+  --bank-name "Example Bank" --account-name "EUR Account" \
+  --street "123 Example Street" --city Amsterdam \
+  --postal-code 1012AB --country NLD
+
 # create a liquidation address
 bridgerton liquidation create <customer-id> \
   --chain tempo --currency usdc \

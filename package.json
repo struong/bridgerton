@@ -32,6 +32,7 @@
   "scripts": {
     "build": "tsc && chmod +x dist/bin.js",
     "typecheck": "tsc --noEmit",
+    "test": "bun run build && bun test test/*.test.mjs",
     "changeset:version": "changeset version",
     "changeset:publish": "bun run build && changeset publish"
   },
