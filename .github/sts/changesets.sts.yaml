@@ -1,0 +1,11 @@
+# Allow the release workflow (push to master) to mint a short-lived token
+# that opens and updates the "chore: version packages" release PR through
+# changesets/action, and pushes its version branch. Replaces the built-in
+# GITHUB_TOKEN so the org can turn off "Allow GitHub Actions to create and
+# approve pull requests".
+subject: repo:tempoxyz@211589300/bridgerton@1191056006:ref:refs/heads/master
+claim_pattern:
+  job_workflow_ref: tempoxyz/bridgerton/\.github/workflows/main\.yml@refs/heads/master
+permissions:
+  contents: write
+  pull_requests: write
