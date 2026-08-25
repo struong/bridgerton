@@ -4,7 +4,7 @@ import { createCustomer, getCustomer, listCustomers, updateCustomer, deleteCusto
 import { createWallet, getWallet, listWallets, listAllWallets, getWalletTotalBalances, getWalletHistory } from './core/wallets.js'
 import { createTransfer, getTransfer, listTransfers, updateTransfer, deleteTransfer, listStaticTemplates } from './core/transfers.js'
 import { createLiquidation, getLiquidation, listLiquidations, listDrains, updateLiquidation, listAllDrains } from './core/liquidation.js'
-import { createExternalAccount, getExternalAccount, listExternalAccounts, deleteExternalAccount } from './core/external-accounts.js'
+import { buildExternalAccountBody, createExternalAccount, getExternalAccount, listExternalAccounts, deleteExternalAccount } from './core/external-accounts.js'
 import { createVirtualAccount, getVirtualAccount, listVirtualAccounts, listAllVirtualAccounts, updateVirtualAccount, deactivateVirtualAccount, reactivateVirtualAccount, getVirtualAccountActivity, getAllVirtualAccountActivity } from './core/virtual-accounts.js'
 import { getExchangeRates } from './core/exchange-rates.js'
 import { runPlaidLinkFlow } from './core/plaid-link.js'
@@ -487,14 +487,19 @@ cli.command(liquidation)
 const externalAccounts = Cli.create('external-accounts', { description: 'Manage external bank accounts.' })
 
 externalAccounts.command('create', {
-  description: 'Add an external account (US ACH) manually or with Plaid.',
+  description: 'Add a US ACH or SEPA IBAN external account, or link a US account with Plaid.',
   args: z.object({ customerId: z.string().describe('Customer ID') }),
   options: z.object({
+    accountType: z.enum(['us', 'iban']).optional().describe('Account type (inferred as iban when --iban is provided; otherwise us)'),
     accountNumber: z.string().optional().describe('Bank account number (omit to use Plaid Link)'),
     routingNumber: z.string().optional().describe('Bank routing number, 9 digits (omit to use Plaid Link)'),
+    iban: z.string().optional().describe('IBAN account number'),
+    bic: z.string().optional().describe('BIC/SWIFT code for an IBAN account'),
     accountOwnerName: z.string().optional().describe('Account owner name (omit to use Plaid Link)'),
+    accountOwnerType: z.enum(['individual', 'business']).optional().describe('IBAN account owner type'),
     checkingOrSavings: z.enum(['checking', 'savings']).default('checking').describe('Checking or savings'),
     bankName: z.string().optional().describe('Bank name'),
+    accountName: z.string().optional().describe('Display name for the account'),
     firstName: z.string().optional().describe('Account holder first name'),
     lastName: z.string().optional().describe('Account holder last name'),
     businessName: z.string().optional().describe('Business name (for business accounts)'),
@@ -502,36 +507,13 @@ externalAccounts.command('create', {
     city: z.string().optional().describe('City'),
     state: z.string().optional().describe('State (2-letter code)'),
     postalCode: z.string().optional().describe('Postal/ZIP code'),
-    country: z.string().default('USA').describe('Country code (3-letter ISO, e.g. USA)'),
+    country: z.string().optional().describe('Country code (3-letter ISO, e.g. USA or NLD)'),
   }),
   async run(c) {
-    const { accountNumber, routingNumber, accountOwnerName, checkingOrSavings, bankName, firstName, lastName, businessName, street, city, state, postalCode, country } = c.options
-    if (!accountNumber && !routingNumber && !accountOwnerName) return runPlaidLinkFlow(c.args.customerId)
-    if (!accountNumber || !routingNumber || !accountOwnerName) {
-      throw new Error('--accountNumber, --routingNumber, and --accountOwnerName are all required for manual creation')
-    }
-    const body: any = {
-      currency: 'usd',
-      account_type: 'us',
-      account_owner_name: accountOwnerName,
-      account: {
-        account_number: accountNumber,
-        routing_number: routingNumber,
-        checking_or_savings: checkingOrSavings,
-      },
-    }
-    if (bankName) body.bank_name = bankName
-    if (firstName) body.first_name = firstName
-    if (lastName) body.last_name = lastName
-    if (businessName) body.business_name = businessName
-    if (street || city || state || postalCode) {
-      body.address = { country }
-      if (street) body.address.street_line_1 = street
-      if (city) body.address.city = city
-      if (state) body.address.state = state
-      if (postalCode) body.address.postal_code = postalCode
-    }
-    return createExternalAccount(c.args.customerId, body)
+    const { accountType, accountNumber, routingNumber, iban, bic, accountOwnerName } = c.options
+    const hasManualOptions = accountType || accountNumber || routingNumber || iban || bic || accountOwnerName
+    if (!hasManualOptions) return runPlaidLinkFlow(c.args.customerId)
+    return createExternalAccount(c.args.customerId, buildExternalAccountBody(c.options))
   },
 })
 
